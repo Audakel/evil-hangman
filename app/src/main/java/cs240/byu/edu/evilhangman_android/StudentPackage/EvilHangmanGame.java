@@ -1,5 +1,6 @@
 package cs240.byu.edu.evilhangman_android.StudentPackage;
 
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.InputStreamReader;
@@ -7,8 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.SimpleTimeZone;
-import java.util.StringTokenizer;
 
 /**
  * Created by audakel on 5/4/16.
@@ -53,9 +52,10 @@ public class EvilHangmanGame implements StudentEvilHangmanGameController {
 
     @Override
     public void startGame(InputStreamReader dictionary, int wordLength) {
+
         previouslyChosenLetters = new HashSet<Character>();
         scanner = new Scanner(dictionary);
-        currentWordList =  new HashSet<String>();
+        currentWordList = new HashSet<String>();
         currentWord = new char[wordLength];
 
         for (int i = 0; i < wordLength; i++) {
@@ -63,7 +63,7 @@ public class EvilHangmanGame implements StudentEvilHangmanGameController {
         }
 
 
-        while (scanner.hasNext()){
+        while (scanner.hasNext()) {
             String word = scanner.next();
             if (wordLength != word.length()) continue;
 
@@ -73,10 +73,9 @@ public class EvilHangmanGame implements StudentEvilHangmanGameController {
 
     @Override
     public Set<String> makeGuess(char guess) throws GuessAlreadyMadeException {
-        HashMap<String, HashSet<String>> wordHashMap = new HashMap<>();
-        char[] tempKey = new char[0];
+        HashMap<String, HashSet<String>> wordHashMap;
 
-        if (!Character.isLetter(guess)){
+        if (!Character.isLetter(guess)) {
             throw new GuessAlreadyMadeException();
         }
 
@@ -85,63 +84,93 @@ public class EvilHangmanGame implements StudentEvilHangmanGameController {
         }
 
         numberOfGuessesLeft--;
-
         addUsedLetter(guess);
+        wordHashMap = updateCurrentWordList(guess, currentWordList);
 
-        for (String word : currentWordList) {
+        int largestList = 0;
+        char[] tempKey = new char[0];
+
+        for (String potentialKey : wordHashMap.keySet()) {
+            if (wordHashMap.get(potentialKey).size() < largestList) {
+                continue;
+            }
+
+            if (wordHashMap.get(potentialKey).size() == largestList) {
+                Log.d(TAG, "makeGuess: " + " currentKey: " + String.valueOf(tempKey) + " potentialKey : " + potentialKey);
+
+                if (keepCurrentKey(guess, tempKey, potentialKey)) {
+                    Log.d(TAG, "makeGuess: we decided to keep the current key");
+                    continue;
+                }
+                Log.d(TAG, "makeGuess: new word chossen: " + potentialKey);
+            }
+
+            largestList = wordHashMap.get(potentialKey).size();
+            currentWordList = wordHashMap.get(potentialKey);
+            tempKey = potentialKey.toCharArray();
+        }
+
+        currentWord = combineKeys(tempKey, currentWord);
+
+        return currentWordList;
+    }
+
+
+    private HashMap<String, HashSet<String>> updateCurrentWordList(char guess, HashSet<String> currentWords) {
+        HashMap<String, HashSet<String>> wordHashMap = new HashMap<>();
+        char[] tempKey = new char[0];
+
+        for (String word : currentWords) {
             tempKey = getBlankKey(word.length());
             for (int i = 0; i < word.length(); i++) {
-                if (word.charAt(i) == guess){
+                if (word.charAt(i) == guess) {
                     tempKey[i] = guess;
                 }
             }
 
 //            Log.d(TAG, "makeGuess: key loop " + String.valueOf(key));
 
-            try{
+            try {
                 wordHashMap.get(String.valueOf(tempKey)).add(word);
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 HashSet<String> newWordSet = new HashSet<String>();
                 newWordSet.add(word);
                 wordHashMap.put(String.valueOf(tempKey), newWordSet);
             }
 
         }
+        return wordHashMap;
+    }
 
-        int largestList = 0;
-        for (String key : wordHashMap.keySet()) {
-//            Log.d(TAG, "makeGuess: for loop key size " + wordHashMap.get(key).size());
-//            Log.d(TAG, "makeGuess: for loop key " + key);
-            if (wordHashMap.get(key).size() > largestList){
-                largestList = wordHashMap.get(key).size();
-                currentWordList = wordHashMap.get(key);
-                tempKey = key.toCharArray();
-
+    @Nullable
+    private Boolean keepCurrentKey(char guess, char[] curKey, String potentialKey) {
+        if (potentialKey.replaceAll("_", "").length() < String.valueOf(curKey).replaceAll("_", "").length()) {
+            return true;
+        } else if (potentialKey.replaceAll(String.valueOf(guess), "").length() <
+                String.valueOf(curKey).replaceAll(String.valueOf(guess), "").length()) {
+            return true;
+        } else {
+            for (int i = potentialKey.length() - 1; i >= 0; i--) {
+                if (curKey[i] != potentialKey.charAt(i)) {
+                    if (curKey[i] == "_".charAt(0)) {
+                        // Current key wins
+                        return true;
+                    }
+                }
             }
         }
-
-        currentWord = combineKeys(tempKey, currentWord);
-
-        Log.d(TAG, "makeGuess: word key " + String.valueOf(currentWord));
-        Log.d(TAG, "makeGuess: currentWOrdList Size " + currentWordList.size());
-
-
-
-        return currentWordList;
+        return false;
     }
 
     private char[] combineKeys(char[] chars, char[] currentWord) {
         char[] newChar = new char[chars.length];
 
-        for (int i = 0; i < chars.length; i++){
-            if (chars[i] != '_'){
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i] != '_') {
                 newChar[i] = chars[i];
-            }
-            else if (currentWord[i] != '_'){
+            } else if (currentWord[i] != '_') {
                 newChar[i] = currentWord[i];
-            }
-            else{
+            } else {
                 newChar[i] = '_';
             }
 
