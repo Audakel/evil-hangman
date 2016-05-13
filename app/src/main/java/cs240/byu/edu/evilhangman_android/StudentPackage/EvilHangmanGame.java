@@ -1,7 +1,6 @@
 package cs240.byu.edu.evilhangman_android.StudentPackage;
 
-import android.support.annotation.Nullable;
-import android.util.Log;
+
 
 import java.io.InputStreamReader;
 import java.util.HashMap;
@@ -52,6 +51,7 @@ public class EvilHangmanGame implements StudentEvilHangmanGameController {
 
     @Override
     public void startGame(InputStreamReader dictionary, int wordLength) {
+        
 
         previouslyChosenLetters = new HashSet<Character>();
         scanner = new Scanner(dictionary);
@@ -96,13 +96,13 @@ public class EvilHangmanGame implements StudentEvilHangmanGameController {
             }
 
             if (wordHashMap.get(potentialKey).size() == largestList) {
-                Log.d(TAG, "makeGuess: " + " currentKey: " + String.valueOf(tempKey) + " potentialKey : " + potentialKey);
+               // Log.d(TAG, "makeGuess: " + " currentKey: " + String.valueOf(tempKey) + " potentialKey : " + potentialKey);
 
                 if (keepCurrentKey(guess, tempKey, potentialKey)) {
-                    Log.d(TAG, "makeGuess: we decided to keep the current key");
+                    //Log.d(TAG, "makeGuess: we decided to keep the current key");
                     continue;
                 }
-                Log.d(TAG, "makeGuess: new word chossen: " + potentialKey);
+                //Log.d(TAG, "makeGuess: new word chossen: " + potentialKey);
             }
 
             largestList = wordHashMap.get(potentialKey).size();
@@ -142,24 +142,39 @@ public class EvilHangmanGame implements StudentEvilHangmanGameController {
         return wordHashMap;
     }
 
-    @Nullable
+    
     private Boolean keepCurrentKey(char guess, char[] curKey, String potentialKey) {
-        if (potentialKey.replaceAll("_", "").length() < String.valueOf(curKey).replaceAll("_", "").length()) {
+        if (potentialKey.replaceAll("_", "").length() > String.valueOf(curKey).replaceAll("_", "").length()) {
             return true;
-        } else if (potentialKey.replaceAll(String.valueOf(guess), "").length() <
+        }
+        if (potentialKey.replaceAll("_", "").length() < String.valueOf(curKey).replaceAll("_", "").length()){
+            return false;
+        }
+        if (potentialKey.replaceAll(String.valueOf(guess), "").length() <
                 String.valueOf(curKey).replaceAll(String.valueOf(guess), "").length()) {
             return true;
-        } else {
+        }
+        if (potentialKey.replaceAll(String.valueOf(guess), "").length() >
+                String.valueOf(curKey).replaceAll(String.valueOf(guess), "").length()) {
+            return false;
+        }
+
+        else {
             for (int i = potentialKey.length() - 1; i >= 0; i--) {
                 if (curKey[i] != potentialKey.charAt(i)) {
-                    if (curKey[i] == "_".charAt(0)) {
+                    if (curKey[i] != "_".charAt(0)) {
                         // Current key wins
                         return true;
                     }
+                    else {
+                        return false;
+                    }
                 }
             }
+
         }
-        return false;
+
+        return null;
     }
 
     private char[] combineKeys(char[] chars, char[] currentWord) {
